@@ -19,34 +19,53 @@ class watchController {
     }
     async getDetail(req, res) {
         try {
-            const watch = await Watch.findById(req.params.id).populate('brand').populate({
-                path: 'comments',
-                populate: {
-                    path: 'author',
-                    model: 'Member'
-                }
+            const watch = await Watch.findById(req.params.id)
+                .populate('brand')
+                .populate({
+                    path: 'comments',
+                    populate: {
+                        path: 'author',
+                        model: 'Member'
+                    }
+                });
+            
+            if (!watch) {
+                return res.json({ message: 'Watch not found' });
+            }
+    
+            // Filter out comments where the author does not exist
+            const validComments = watch.comments.filter(comment => comment.author !== null);
+    
+            // Create a new watch object with valid comments
+            const watchWithValidComments = {
+                ...watch.toObject(),
+                comments: validComments
+            };
+    
+            res.status(200).json({ 
+                message: 'Get watch detail successfully', 
+                watch: watchWithValidComments 
             });
-            res.status(200).json(watch)
         } catch (error) {
-            res.json({ message: error.message })
+            res.status(500).json({ message: error.message });
         }
     }
     async addWatch(req, res) {
         try {
             const { watchName, image, price, Automatic, watchDescription, brand } = req.body;
             if (!watchName || !image || !price || !watchDescription || !brand) {
-                return res.json({ message: 'Watch name, image, price, watch description, and brand are required' });
+                return res.status(500).json({ message: 'Watch name, image, price, watch description, and brand are required' });
             }
             const findWatch = await Watch.findOne({ watchName: watchName })
             if (findWatch) {
-                return res.json({ message: 'Watch already exists' });
+                return res.status(500).json({ message: 'Watch already exists' });
             }
 
             if (price < 1) {
-                return res.json({ message: 'Price must be greater than 0' });
+                return res.status(500).json({ message: 'Price must be greater than 0' });
             }
             if (!isValidUrl(image)) {
-                return res.json({ message: 'Invalid image URL' });
+                return res.status(500).json({ message: 'Invalid image URL' });
             }
 
             const newWatch = new Watch({
@@ -68,7 +87,10 @@ class watchController {
         try {
             const watch = await Watch.findById(req.params.id)
             if (!watch) {
-                return res.json({ message: 'Watch not found' });
+                return res.status(500).json({ message: 'Watch not found' });
+            }
+            if(watch.comments.length > 0) {
+                return res.status(500).json({ message: 'Cannot delete watch with comments' });
             }
             await Watch.findByIdAndDelete(req.params.id)
             res.json({ message: 'Delete watch successfully' })
@@ -83,12 +105,12 @@ class watchController {
 
             // Validate inputs
             if (!watchName || !image || !price || !watchDescription || !brand) {
-                return res.json({ message: 'Watch name, image, price, watch description, and brand are required' });
+                return res.status(500).json({ message: 'Watch name, image, price, watch description, and brand are required' });
             }
             // Find and update the watch
             const watch = await Watch.findById(id);
             if (!watch) {
-                return res.json({ message: 'Watch not found' });
+                return res.status(500).json({ message: 'Watch not found' });
             }
 
             watch.watchName = watchName;
@@ -99,7 +121,7 @@ class watchController {
             watch.brand = brand;
 
             await watch.save();
-            res.json('Updated watch successfully');
+            res.json({ message: 'Updated watch successfully' });
         } catch (error) {
             console.error(error);
             res.status(500).json({ message: error.message })

@@ -13,11 +13,11 @@ class brandController {
         try {
             const findBrand = await Brand.findById(req.params.id)
             if (!findBrand) {
-                return res.json({ message: 'Brand not found' })
+                return res.status(500).json({ message: 'Brand not found' })
             }
             const watchWithBrand = await Watch.findOne({ brand: req.params.id })
             if(watchWithBrand) {
-                return res.json({ message: 'This brand is used in a watch' })
+                return res.status(500).json({ message: 'This brand is used in a watch' })
             }
             await Brand.findByIdAndDelete(req.params.id)
             res.json({ message: 'Brand deleted successfully' })
