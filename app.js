@@ -14,7 +14,7 @@ var authRouter = require('./routes/authRouter');
 
 var app = express();
 
-const url = 'mongodb://localhost:27017/PE_SDN301m_TrialTest_SE170126'
+const url = 'mongodb://localhost:27017/MemberAuth'
 mongoose.connect(url).then((db) => {
   console.log('Connect success')
 })
